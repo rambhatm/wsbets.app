@@ -4,10 +4,20 @@ const passport = require('passport')
 const session = require('express-session');
 const bodyParser = require('body-parser');
 const crypto = require('crypto')
+const cookieParser = require('cookie-parser')
+const methodOverride = require('method-override')
 const RedditStrategy = require('passport-reddit').Strategy
 
 dotenv.config()
 const app = express()
+
+// setup for body-parser module
+app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.json());
+//app.use(express.logger());
+app.use(cookieParser())
+
+app.use(methodOverride());
 
 // express session middleware setup
 app.use(session({
@@ -16,6 +26,11 @@ app.use(session({
     saveUninitialized: true
 }));
 
+// passport middleware setup ( it is mandatory to put it after session middleware setup)
+app.use(passport.initialize())
+app.use(passport.session())
+//app.use(app.router)
+
 passport.serializeUser(function (user, done) {
     done(null, user);
 });
@@ -23,9 +38,7 @@ passport.serializeUser(function (user, done) {
 passport.deserializeUser(function (obj, done) {
     done(null, obj);
 });
-// passport middleware setup ( it is mandatory to put it after session middleware setup)
-app.use(passport.initialize());
-app.use(passport.session());
+
 // Use the RedditStrategy within Passport.
 //   Strategies in Passport require a `verify` function, which accept
 //   credentials (in this case, an accessToken, refreshToken, and Reddit
@@ -39,6 +52,9 @@ passport.use(new RedditStrategy({
 },
     function (accessToken, refreshToken, profile, done) {
         // asynchronous verification, for effect...
+        console.log(accessToken)
+        console.log(refreshToken)
+        console.log(profile)
         process.nextTick(function () {
 
             // To keep the example simple, the user's Reddit profile is returned to
@@ -63,6 +79,7 @@ app.get("/", ensureAuthenticated, (req, res) => {
 //   Note that the 'state' option is a Reddit-specific requirement.
 app.get('/auth/reddit', function (req, res, next) {
     req.session.state = crypto.randomBytes(32).toString('hex');
+    console.log(req.session.state)
     passport.authenticate('reddit', {
         state: req.session.state,
     })(req, res, next);
@@ -75,15 +92,16 @@ app.get('/auth/reddit', function (req, res, next) {
 //   which, in this example, will redirect the user to the home page.
 app.get('/auth/reddit/callback', function (req, res, next) {
     // Check for origin via state token
-    if (req.query.state == req.session.state) {
+   // if (req.query.state == req.session.state) {
         passport.authenticate('reddit', {
             successRedirect: '/',
             failureRedirect: '/login'
         })(req, res, next);
-    }
-    else {
-        next(new Error(403));
-    }
+   // }
+   // else {
+     //   console.log(`req.query.state ${req.query.state}  req.session.state ${req.session.state}`)
+       // next(new Error(403));
+    //}
 });
 
 app.get('/logout', function (req, res) {
