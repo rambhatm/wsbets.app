@@ -21,7 +21,7 @@ app.use(methodOverride());
 
 // express session middleware setup
 app.use(session({
-    secret: 'W$q4=25*8%v-}UV',
+    secret: process.env.EXPRESS_SESSION_SECRET,
     resave: true,
     saveUninitialized: true
 }));
@@ -48,13 +48,13 @@ passport.deserializeUser(function (obj, done) {
 passport.use(new RedditStrategy({
     clientID: process.env.REDDIT_KEY,
     clientSecret: process.env.REDDIT_SECRET,
-    callbackURL: "http://127.0.0.1:8080/auth/reddit/callback"
+    callbackURL: "http://127.0.0.1:8080/api/auth/reddit/callback"
 },
     function (accessToken, refreshToken, profile, done) {
         // asynchronous verification, for effect...
-        console.log(accessToken)
-        console.log(refreshToken)
-        console.log(profile)
+        //console.log(accessToken)
+        //console.log(refreshToken)
+        //console.log(profile)
         process.nextTick(function () {
 
             // To keep the example simple, the user's Reddit profile is returned to
@@ -77,7 +77,7 @@ app.get("/", ensureAuthenticated, (req, res) => {
 //   will redirect the user back to this application at /auth/reddit/callback
 //
 //   Note that the 'state' option is a Reddit-specific requirement.
-app.get('/auth/reddit', function (req, res, next) {
+app.get('/api/auth/reddit', function (req, res, next) {
     req.session.state = crypto.randomBytes(32).toString('hex');
     console.log(req.session.state)
     passport.authenticate('reddit', {
@@ -90,12 +90,12 @@ app.get('/auth/reddit', function (req, res, next) {
 //   request.  If authentication fails, the user will be redirected back to the
 //   login page.  Otherwise, the primary route function function will be called,
 //   which, in this example, will redirect the user to the home page.
-app.get('/auth/reddit/callback', function (req, res, next) {
+app.get('/api/auth/reddit/callback', function (req, res, next) {
     // Check for origin via state token
    // if (req.query.state == req.session.state) {
         passport.authenticate('reddit', {
             successRedirect: '/',
-            failureRedirect: '/login'
+            failureRedirect: '/api/auth/reddit'
         })(req, res, next);
    // }
    // else {
@@ -104,7 +104,7 @@ app.get('/auth/reddit/callback', function (req, res, next) {
     //}
 });
 
-app.get('/logout', function (req, res) {
+app.get('/api/logout', function (req, res) {
     req.logout();
     res.redirect('/');
 });
@@ -119,5 +119,5 @@ app.listen(process.env.SERVER_PORT, () => {
 //   login page.
 function ensureAuthenticated(req, res, next) {
     if (req.isAuthenticated()) { return next(); }
-    res.redirect('/auth/reddit');
+    res.redirect('/api/auth/reddit');
 }
