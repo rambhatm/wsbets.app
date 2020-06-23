@@ -12,6 +12,7 @@ const RedditStrategy = require('passport-reddit').Strategy
 const users = require('./userProfile.js');
 const e = require('express');
 const { MongoClient } = require('mongodb');
+const userProfile = require('./userProfile.js');
 
 dotenv.config()
 const app = express()
@@ -55,22 +56,19 @@ passport.use(new RedditStrategy({
     clientSecret: process.env.REDDIT_SECRET,
     callbackURL: "http://127.0.0.1:8080/api/auth/reddit/callback"
 },
-    function (accessToken, refreshToken, profile, done) {
-        users.getProfile(profile.id)
-            .then(userProfile => {
-                done(null, userProfile)
-
-            })
-        }
-   /*
-        userProfile = {
+async function (accessToken, refreshToken, profile, done) {
+    let userProfile = await users.getProfile(profile.id)
+    if (userProfile) {
+        done(null, userProfile)
+    } else {
+        let newProfile = {
             'userID' : profile.id,
             'redditData' : profile
         }
-        await users.setProfile(userProfile)
-        done(null, userProfile)    
-       
-    }*/
+        await users.setProfile(newProfile)
+        done(null, newProfile)
+    }
+}
 ));
 
 app.get("/", protectedEndpoint, (req, res) => {
@@ -106,9 +104,9 @@ app.get('/api/auth/reddit/callback', function (req, res, next) {
         })(req, res, next);
   //  }
  //   else {
- //       console.log(`req.query.state ${req.query.state}  req.session.state ${req.session.state}`)
- //       next(new Error(403));
-  //  }
+   //     console.log(`req.query.state ${req.query.state}  req.session.state ${req.session.state}`)
+   //     next(new Error(403));
+ // }
 });
 
 app.get('/api/auth/reddit/logout', function (req, res) {
