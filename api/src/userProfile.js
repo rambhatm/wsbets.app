@@ -1,4 +1,3 @@
-const db = require('./mongoDB.js')
 const dotenv = require('dotenv')
 const { MongoClient } = require('mongodb')
 dotenv.config()
@@ -23,6 +22,7 @@ module.exports = {
             let result = await client.db(process.env.MONGO_DB_NAME)
                 .collection(process.env.MONGO_USERS_COLLY)
                 .insertOne(profile)
+            client.close()
         } catch (error) {
             throw error
         }
