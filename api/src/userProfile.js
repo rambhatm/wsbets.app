@@ -9,17 +9,33 @@ module.exports = {
                 .db(process.env.MONGO_DB_NAME)
                 .collection(process.env.MONGO_USERS_COLLY)
                 .findOne({
-                    userID: userID
-                })
-                .toArray((err, data) => {
-
+                    'userID': userID
+                }).then(doc => {
                     db.Disconnect(client)
-                    resolve(data[0])
+                    resolve(doc)
                 })
         })
         )
         )
     })()),
+
+    setProfile: async (profile) => (await(() => {
+        new Promise((resolve, reject) => (db.Connect().then(client => {
+            client
+                .db(process.env.MONGO_DB_NAME)
+                .collection(process.env.MONGO_USERS_COLLY)
+                .insertOne(profile)
+                .then(() => {
+                    resolve(profile)
+                })
+                .catch(err => {
+                    reject(err)
+                })
+
+        })
+
+        ))
+    })())
 }
 
 function verifyRedditUser(accessToken, refreshToken, profile, done) {

@@ -9,11 +9,14 @@ const methodOverride = require('method-override');
 const { authenticate } = require('passport');
 const RedditStrategy = require('passport-reddit').Strategy
 
+const users = require('./userProfile.js');
+const e = require('express');
+
 dotenv.config()
 const app = express()
 
 // setup for body-parser module
-app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 //app.use(express.logger());
 app.use(cookieParser())
@@ -51,14 +54,26 @@ passport.use(new RedditStrategy({
     clientSecret: process.env.REDDIT_SECRET,
     callbackURL: "http://127.0.0.1:8080/api/auth/reddit/callback"
 },
-    function (accessToken, refreshToken, profile, done) {
+    async function (accessToken, refreshToken, profile, done) {
+        let userProfile = await users.getProfile(profile.id)
+        done(null, userProfile)
+        /*
         users.getProfile(profile.id)
-            .then(user =>{
-                done(null, user)
-            }).catch(e => {
-                done(null, false, {msg: "db err"})
+            .then(userProfile => {
+                if (userProfile) {
+                    done(null, userProfile)
+                } else {
+                    users.setProfile({
+                        'userID': profile.id,
+                        'redditData': profile
+                    }).then(prof => {
+                        done(null, prof)
+                    })
+                }
             })
-     }
+        }
+        */
+    }
 ));
 
 app.get("/", protectedEndpoint, (req, res) => {
@@ -87,16 +102,16 @@ app.get('/api/auth/reddit', function (req, res, next) {
 //   which, in this example, will redirect the user to the home page.
 app.get('/api/auth/reddit/callback', function (req, res, next) {
     // Check for origin via state token
-    if (req.query.state == req.session.state) {
+   // if (req.query.state == req.session.state) {
         passport.authenticate('reddit', {
             successRedirect: '/',
             failureRedirect: '/api/auth/reddit'
         })(req, res, next);
-    }
-    else {
-        console.log(`req.query.state ${req.query.state}  req.session.state ${req.session.state}`)
-        next(new Error(403));
-   }
+  //  }
+ //   else {
+ //       console.log(`req.query.state ${req.query.state}  req.session.state ${req.session.state}`)
+ //       next(new Error(403));
+  //  }
 });
 
 app.get('/api/auth/reddit/logout', function (req, res) {
