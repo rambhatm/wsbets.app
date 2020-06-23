@@ -1,65 +1,31 @@
 const db = require('./mongoDB.js')
 const dotenv = require('dotenv')
+const { MongoClient } = require('mongodb')
 dotenv.config()
 
 module.exports = {
-    getProfile: async (userID) => (await (() => {
-        new Promise((resolve, reject) => (db.Connect().then(client => {
-            client
-                .db(process.env.MONGO_DB_NAME)
+    getProfile: async (userID) => {
+        try {
+            let client = await MongoClient.connect(process.env.MONGO_URL,{ useUnifiedTopology: true })
+            let profile = await client.db(process.env.MONGO_DB_NAME)
                 .collection(process.env.MONGO_USERS_COLLY)
-                .findOne({
-                    'userID': userID
-                }).then(doc => {
-                    db.Disconnect(client)
-                    resolve(doc)
-                })
-        })
-        )
-        )
-    })()),
+                .findOne({ 'userID': userID })
+            client.close()
+            return profile
+        } catch (error) {
+            throw error
+        }
+    },
 
-    setProfile: async (profile) => (await(() => {
-        new Promise((resolve, reject) => (db.Connect().then(client => {
-            client
-                .db(process.env.MONGO_DB_NAME)
+    setProfile: async (profile) => {
+        try {
+            let client = await MongoClient.connect(process.env.MONGO_URL, { useUnifiedTopology: true })
+            let result = await client.db(process.env.MONGO_DB_NAME)
                 .collection(process.env.MONGO_USERS_COLLY)
                 .insertOne(profile)
-                .then(() => {
-                    resolve(profile)
-                })
-                .catch(err => {
-                    reject(err)
-                })
-
-        })
-
-        ))
-    })())
-}
-
-function verifyRedditUser(accessToken, refreshToken, profile, done) {
-    const client = new MongoClient(process.env.MONGO_URL);
-    client.connect(function (err) {
-        if (err) {
-            done(null, false, { message: 'Unable to connect to verify user' })
+        } catch (error) {
+            throw error
         }
-        console.log("Connected successfully to mongo server");
-
-        const db = client.db(process.env.MONGO_DB_NAME);
-        const users = db.collection(process.env.MONGO_USERS_COLLY)
-        users.findOne({ 'userID': profile.id })
-            .then((doc) => {
-                if (doc) {
-                    //already existing User
-
-                } else {
-                    //new user
-                }
-            })
-
-        client.close();
-    });
-    done(null, profile)
+    }
 }
 

@@ -11,6 +11,7 @@ const RedditStrategy = require('passport-reddit').Strategy
 
 const users = require('./userProfile.js');
 const e = require('express');
+const { MongoClient } = require('mongodb');
 
 dotenv.config()
 const app = express()
@@ -54,26 +55,22 @@ passport.use(new RedditStrategy({
     clientSecret: process.env.REDDIT_SECRET,
     callbackURL: "http://127.0.0.1:8080/api/auth/reddit/callback"
 },
-    async function (accessToken, refreshToken, profile, done) {
-        let userProfile = await users.getProfile(profile.id)
-        done(null, userProfile)
-        /*
+    function (accessToken, refreshToken, profile, done) {
         users.getProfile(profile.id)
             .then(userProfile => {
-                if (userProfile) {
-                    done(null, userProfile)
-                } else {
-                    users.setProfile({
-                        'userID': profile.id,
-                        'redditData': profile
-                    }).then(prof => {
-                        done(null, prof)
-                    })
-                }
+                done(null, userProfile)
+
             })
         }
-        */
-    }
+   /*
+        userProfile = {
+            'userID' : profile.id,
+            'redditData' : profile
+        }
+        await users.setProfile(userProfile)
+        done(null, userProfile)    
+       
+    }*/
 ));
 
 app.get("/", protectedEndpoint, (req, res) => {
