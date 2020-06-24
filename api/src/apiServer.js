@@ -9,13 +9,19 @@ const methodOverride = require('method-override');
 const { authenticate } = require('passport');
 const RedditStrategy = require('passport-reddit').Strategy
 
+//vuejs app
+const publicRoot = '../app/dist'
+
+
+
+
 const users = require('./userProfile.js');
 const e = require('express');
 const { MongoClient } = require('mongodb');
-const userProfile = require('./userProfile.js');
 
 dotenv.config()
 const app = express()
+app.use(express.static(publicRoot))
 
 // setup for body-parser module
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -24,6 +30,7 @@ app.use(bodyParser.json());
 app.use(cookieParser())
 
 app.use(methodOverride());
+
 
 // express session middleware setup
 app.use(session({
@@ -71,10 +78,16 @@ async function (accessToken, refreshToken, profile, done) {
 }
 ));
 
-app.get("/", protectedEndpoint, (req, res) => {
-    res.send("STILL ALIVE BABEYYYYYY")
-})
+app.get("/", (req, res, next) => {
+    res.sendFile("index.html", { root: publicRoot })
+  })
 
+app.get("/api/auth/user", protectedEndpoint, (req, res) => {
+   
+    console.log([user, req.session])
+  
+    res.send({ user: user })
+  })
 // GET /auth/reddit
 //   Use passport.authenticate() as route middleware to authenticate the
 //   request.  The first step in Reddit authentication will involve
