@@ -1,10 +1,12 @@
 {
   "presets": [
-    [
-      "@vue/app",
-      {
-        "polyfills": ["es7.object.entries", "es6.promise"]
+    ["env", {
+      "modules": false,
+      "targets": {
+        "browsers": ["> 1%", "last 2 versions", "not ie <= 8"]
       }
-    ]
-  ]
+    }],
+    "stage-2"
+  ],
+  "plugins": ["transform-vue-jsx", "transform-runtime"]
 }
