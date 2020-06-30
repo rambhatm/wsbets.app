@@ -30,8 +30,8 @@ app.use(session({
 }));
 
 // passport middleware setup ( it is mandatory to put it after session middleware setup)
-//const reddit = require('./reddit')
-//reddit.initPassport(app)
+const reddit = require('./reddit')
+reddit.initPassport(app)
 
 //app.use(app.router)
 /* Deployment stuff
@@ -41,7 +41,7 @@ app.get("/", (req, res, next) => {
 */
 
 //Reddit authentication endpoints
-//app.use('api/auth/reddit',reddit.router)
+app.use('api/auth/reddit',reddit.router)
 
 //User profile
 app.get("/api/auth/user", /*protectedEndpoint,*/ async(req, res) => {

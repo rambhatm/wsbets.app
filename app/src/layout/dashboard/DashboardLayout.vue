@@ -62,10 +62,21 @@ export default {
         console.log(err)
         router.push("/")
       }
+    },
+    testUser : async function() {
+      try {
+        let self = this
+        let response = await axios.get("/api/auth/user?userID=2i8gflay")
+        self.$set(this, "user", response.data.user)
+      } catch(err) {
+        console.log(err)
+        router.push("/")
+      }
     }  
   },
   mounted() {
-    this.getUserData()
+    //this.getUserData()
+    this.testUser()
   }
 };
 </script>
