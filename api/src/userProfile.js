@@ -4,31 +4,42 @@ const dotenv = require('dotenv')
 dotenv.config()
 const mongoose = require('mongoose');
 const { ObjectID } = require('mongodb');
-mongoose.connect(process.env.MONGO_URL, { useNewUrlParser: true });
+mongoose.connect(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true });
+
+mongoose.connection.on("open", function(ref) {
+    console.log("Connected to mongo server.");
+  });
+  
+mongoose.connection.on("error", function(err) {
+    console.log("Could not connect to mongo server!");
+    return console.log(err);
+});
 
 const userProfileSchema = new mongoose.Schema({
     userID: {
-        type: ObjectID,
+        type: String,
         required: true
     },
-    redditData: mongoose.Schema.Types.Mixed
+    redditProfile: mongoose.Schema.Types.Mixed
 })
 
-var userProfile = mongoose.model("userProfiles", userProfileSchema)
+
+let userProfile = mongoose.model("userProfile", userProfileSchema, "userProfiles")
 
 module.exports = {
-    getUserProfile: async (userID) => {
-        try {
-            let profile = await userProfile.findOne({ userID: userID }).exec();
-            return profile
-        } catch (err) {
-            err.stack;
-        }
+    getUserProfile: (userID) => {
+        
+        userProfile.findOne({ userID: userID }, (err, profile) => {
+                if (err)
+                    err.stack
+                console.log(profile)
+                return profile
+       })
     },
 
     createNewUser: async (id, redditProfile) => {
         try {
-            const newProfile = new userProfiles({
+            let newProfile = new userProfile({
                 userID : id,
                 redditProfile : redditProfile
             })

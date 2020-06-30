@@ -15,7 +15,7 @@ const users = require('./userProfile');
 
 //app.use(express.static(publicRoot))
 // setup for body-parser module
-app.use(morgan())
+app.use(morgan('dev'))
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 //app.use(express.logger());
@@ -30,8 +30,8 @@ app.use(session({
 }));
 
 // passport middleware setup ( it is mandatory to put it after session middleware setup)
-const reddit = require('./reddit')
-reddit.initPassport(app)
+//const reddit = require('./reddit')
+//reddit.initPassport(app)
 
 //app.use(app.router)
 /* Deployment stuff
@@ -41,15 +41,21 @@ app.get("/", (req, res, next) => {
 */
 
 //Reddit authentication endpoints
-app.use('api/auth/reddit',reddit.router)
+//app.use('api/auth/reddit',reddit.router)
 
 //User profile
 app.get("/api/auth/user", /*protectedEndpoint,*/ async(req, res) => {
-    let user = await users.getProfile(req.param("userID"))
+    let user = await users.getUserProfile(req.query.userID)
     res.send({ user: user })
+})
+
+app.post("/api/auth/user", async(req, res) => {
+    await users.createNewUser(req.body.id, req.body.reddit)
+    res.end()
 })
 
 app.listen(process.env.SERVER_PORT, () => {
     console.log(`server started on http://localhost:${process.env.SERVER_PORT}`)
+
 })
 
