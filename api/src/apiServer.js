@@ -47,6 +47,7 @@ app.get("/", (req, res, next) => {
 app.get("/api/auth/user", /*protectedEndpoint,*/ async(req, res) => {
     let user = await users.getUserProfile(req.query.userID)
     res.send({ user: user })
+    res.end()
 })
 
 app.post("/api/auth/user", async(req, res) => {
