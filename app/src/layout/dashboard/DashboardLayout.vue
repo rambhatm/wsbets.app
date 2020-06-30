@@ -12,16 +12,7 @@
           :name="$t('sidebar.userProfile')"
           icon="tim-icons icon-single-02"
         />
-        <sidebar-link
-          to="/notifications"
-          :name="$t('sidebar.notifications')"
-          icon="tim-icons icon-bell-55"
-        />
-        <sidebar-link
-          to="/dashboard?enableRTL=true"
-          :name="$t('sidebar.rtlSupport')"
-          icon="tim-icons icon-world"
-        />
+
       </template>
     </side-bar>
     <div class="main-panel">

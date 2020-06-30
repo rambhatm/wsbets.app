@@ -1,31 +1,42 @@
+//contains sceme & functionality of user profile used during authentication
+
 const dotenv = require('dotenv')
-const { MongoClient } = require('mongodb')
 dotenv.config()
+const mongoose = require('mongoose');
+const { ObjectID } = require('mongodb');
+mongoose.connect(process.env.MONGO_URL, { useNewUrlParser: true });
+
+const userProfileSchema = new mongoose.Schema({
+    userID: {
+        type: ObjectID,
+        required: true
+    },
+    redditData: mongoose.Schema.Types.Mixed
+})
+
+var userProfile = mongoose.model("userProfiles", userProfileSchema)
 
 module.exports = {
-    getProfile: async (userID) => {
+    getUserProfile: async (userID) => {
         try {
-            let client = await MongoClient.connect(process.env.MONGO_URL,{ useUnifiedTopology: true })
-            let profile = await client.db(process.env.MONGO_DB_NAME)
-                .collection(process.env.MONGO_USERS_COLLY)
-                .findOne({ 'userID': userID })
-            client.close()
+            let profile = await userProfile.findOne({ userID: userID }).exec();
             return profile
-        } catch (error) {
-            throw error
+        } catch (err) {
+            err.stack;
         }
     },
 
-    setProfile: async (profile) => {
+    createNewUser: async (id, redditProfile) => {
         try {
-            let client = await MongoClient.connect(process.env.MONGO_URL, { useUnifiedTopology: true })
-            let result = await client.db(process.env.MONGO_DB_NAME)
-                .collection(process.env.MONGO_USERS_COLLY)
-                .insertOne(profile)
-            client.close()
-        } catch (error) {
-            throw error
+            const newProfile = new userProfiles({
+                userID : id,
+                redditProfile : redditProfile
+            })
+            await newProfile.save().exec();
+        } catch (err) {
+            err.stack;
         }
     }
 }
+
 
