@@ -1,23 +1,25 @@
-const express = require('express')
 const dotenv = require('dotenv')
-const passport = require('passport')
-const session = require('express-session');
-const bodyParser = require('body-parser');
-const crypto = require('crypto')
-const cookieParser = require('cookie-parser')
-const methodOverride = require('method-override');
-const { authenticate } = require('passport');
-const RedditStrategy = require('passport-reddit').Strategy
-
 dotenv.config()
+const express = require('express')
 const app = express()
 
+const session = require('express-session');
+const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser')
+const methodOverride = require('method-override');
+const morgan = require('morgan')
+
+//vuejs app production
+//const publicRoot = '../app/dist'
+const users = require('./userProfile');
+
+//app.use(express.static(publicRoot))
 // setup for body-parser module
-app.use(bodyParser.urlencoded({extended: false}));
+app.use(morgan('dev'))
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 //app.use(express.logger());
 app.use(cookieParser())
-
 app.use(methodOverride());
 
 // express session middleware setup
@@ -28,92 +30,33 @@ app.use(session({
 }));
 
 // passport middleware setup ( it is mandatory to put it after session middleware setup)
-app.use(passport.initialize())
-app.use(passport.session())
+const reddit = require('./reddit')
+reddit.initPassport(app)
+
 //app.use(app.router)
+/* Deployment stuff
+app.get("/", (req, res, next) => {
+    res.sendFile("index.html", { root: publicRoot })
+})
+*/
 
-passport.serializeUser(function (user, done) {
-    done(null, user);
-});
+//Reddit authentication endpoints
+app.use('api/auth/reddit',reddit.router)
 
-passport.deserializeUser(function (obj, done) {
-    done(null, obj);
-});
-
-// Use the RedditStrategy within Passport.
-//   Strategies in Passport require a `verify` function, which accept
-//   credentials (in this case, an accessToken, refreshToken, and Reddit
-//   profile), and invoke a callback with a user object.
-//   callbackURL must match redirect uri from your app settings
-
-passport.use(new RedditStrategy({
-    clientID: process.env.REDDIT_KEY,
-    clientSecret: process.env.REDDIT_SECRET,
-    callbackURL: "http://127.0.0.1:8080/api/auth/reddit/callback"
-},
-    function (accessToken, refreshToken, profile, done) {
-        users.getProfile(profile.id)
-            .then(user =>{
-                done(null, user)
-            }).catch(e => {
-                done(null, false, {msg: "db err"})
-            })
-     }
-));
-
-app.get("/", protectedEndpoint, (req, res) => {
-    res.send("STILL ALIVE BABEYYYYYY")
+//User profile
+app.get("/api/auth/user", /*protectedEndpoint,*/ async(req, res) => {
+    let user = await users.getUserProfile(req.query.userID)
+    res.send({ user: user })
+    res.end()
 })
 
-// GET /auth/reddit
-//   Use passport.authenticate() as route middleware to authenticate the
-//   request.  The first step in Reddit authentication will involve
-//   redirecting the user to reddit.com.  After authorization, Reddit
-//   will redirect the user back to this application at /auth/reddit/callback
-//
-//   Note that the 'state' option is a Reddit-specific requirement.
-app.get('/api/auth/reddit', function (req, res, next) {
-    req.session.state = crypto.randomBytes(32).toString('hex');
-    console.log(req.session.state)
-    passport.authenticate('reddit', {
-        state: req.session.state,
-    })(req, res, next);
-});
-
-// GET /auth/reddit/callback
-//   Use passport.authenticate() as route middleware to authenticate the
-//   request.  If authentication fails, the user will be redirected back to the
-//   login page.  Otherwise, the primary route function function will be called,
-//   which, in this example, will redirect the user to the home page.
-app.get('/api/auth/reddit/callback', function (req, res, next) {
-    // Check for origin via state token
-    if (req.query.state == req.session.state) {
-        passport.authenticate('reddit', {
-            successRedirect: '/',
-            failureRedirect: '/api/auth/reddit'
-        })(req, res, next);
-    }
-    else {
-        console.log(`req.query.state ${req.query.state}  req.session.state ${req.session.state}`)
-        next(new Error(403));
-   }
-});
-
-app.get('/api/auth/reddit/logout', function (req, res) {
-    req.logout();
-    res.redirect('/');
-});
+app.post("/api/auth/user", async(req, res) => {
+    await users.createNewUser(req.body.id, req.body.reddit)
+    res.end()
+})
 
 app.listen(process.env.SERVER_PORT, () => {
     console.log(`server started on http://localhost:${process.env.SERVER_PORT}`)
+
 })
 
-// Simple route middleware to ensure user is authenticated.
-//   Use this route middleware on any resource that needs to be protected.  If
-//   the request is authenticated (typically via a persistent login session),
-//   the request will proceed.  Otherwise, the user will be redirected to the
-//   login page.
-function protectedEndpoint(req, res, next) {
-    if (req.isAuthenticated()) { return next(); }
-    res.redirect('/api/auth/reddit');
-}

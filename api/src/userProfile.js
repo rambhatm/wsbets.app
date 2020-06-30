@@ -1,49 +1,50 @@
-const db = require('./mongoDB.js')
+//contains sceme & functionality of user profile used during authentication
+
 const dotenv = require('dotenv')
 dotenv.config()
+const mongoose = require('mongoose');
+const { ObjectID } = require('mongodb');
+mongoose.connect(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true });
+
+const userProfileSchema = new mongoose.Schema({
+    userID: {
+        type: String,
+        required: true
+    },
+    redditProfile: mongoose.Schema.Types.Mixed
+})
+
+let userProfile = mongoose.model("userProfile", userProfileSchema, "userProfiles")
 
 module.exports = {
-    getProfile: async (userID) => (await (() => {
-        new Promise((resolve, reject) => (db.Connect().then(client => {
-            client
-                .db(process.env.MONGO_DB_NAME)
-                .collection(process.env.MONGO_USERS_COLLY)
-                .findOne({
-                    userID: userID
-                })
-                .toArray((err, data) => {
-
-                    db.Disconnect(client)
-                    resolve(data[0])
-                })
-        })
-        )
-        )
-    })()),
-}
-
-function verifyRedditUser(accessToken, refreshToken, profile, done) {
-    const client = new MongoClient(process.env.MONGO_URL);
-    client.connect(function (err) {
-        if (err) {
-            done(null, false, { message: 'Unable to connect to verify user' })
+    getUserProfile: async (id) => {
+        try {
+            let profile = await userProfile.findOne({ userID: id }).exec()
+            return profile
+        } catch (err) {
+            err.stack
         }
-        console.log("Connected successfully to mongo server");
+    },
 
-        const db = client.db(process.env.MONGO_DB_NAME);
-        const users = db.collection(process.env.MONGO_USERS_COLLY)
-        users.findOne({ 'userID': profile.id })
-            .then((doc) => {
-                if (doc) {
-                    //already existing User
-
-                } else {
-                    //new user
-                }
+    createNewUser: async (id, redditProfile) => {
+        try {
+            let newProfile = new userProfile({
+                userID: id,
+                redditProfile: redditProfile
             })
-
-        client.close();
-    });
-    done(null, profile)
+            await newProfile.save().exec();
+        } catch (err) {
+            err.stack;
+        }
+    }
 }
 
+
+mongoose.connection.on("open", function (ref) {
+    console.log("Connected to mongo server.");
+});
+
+mongoose.connection.on("error", function (err) {
+    console.log("Could not connect to mongo server!");
+    return console.log(err);
+});
