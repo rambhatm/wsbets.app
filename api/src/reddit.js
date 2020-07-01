@@ -87,16 +87,16 @@ function login(req, res, next) {
 function loginCallback(req, res, next) {
     // Check for origin via state token
     console.log("Callback from reddit received")
-    // if (req.query.state == req.session.state) {
+    if (req.query.state == req.session.state) {
     passport.authenticate('reddit', {
         successRedirect: '/dashboard',
         failureRedirect: '/api/auth/reddit'
     })(req, res, next)
-    //  }
-    //   else {
-    //     console.log(`req.query.state ${req.query.state}  req.session.state ${req.session.state}`)
-    //     next(new Error(403));
-    // }
+    }
+    else {
+       console.log(`req.query.state ${req.query.state}  req.session.state ${req.session.state}`)
+       next(new Error(403));
+    }
 }
 function logout(req, res) {
     req.logout()
