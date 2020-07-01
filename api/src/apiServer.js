@@ -41,7 +41,7 @@ app.get("/", (req, res, next) => {
 */
 
 //Reddit authentication endpoints
-app.use('api/auth/reddit',reddit.router)
+app.use('/api/auth/reddit',reddit.router)
 
 //User profile
 app.get("/api/auth/user", /*protectedEndpoint,*/ async(req, res) => {

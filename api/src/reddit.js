@@ -43,7 +43,7 @@ module.exports = {
                     done(null, userProfile)
                 } else {
                     await createNewUser(profile.id, profile)
-                    done(null, newProfile)
+                    done(null, Profile)
                 }
             }
         ));
